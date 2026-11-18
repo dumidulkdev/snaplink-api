@@ -14,16 +14,19 @@ import java.time.Clock;
 @Service
 public class RedirectService {
 
+    private final LinkResolutionCache linkResolutionCache;
     private final LinkRepository linkRepository;
     private final ClickEventRepository clickEventRepository;
     private final IpHashService ipHashService;
     private final Clock clock;
 
     public RedirectService(
+            LinkResolutionCache linkResolutionCache,
             LinkRepository linkRepository,
             ClickEventRepository clickEventRepository,
             IpHashService ipHashService,
             Clock clock) {
+        this.linkResolutionCache = linkResolutionCache;
         this.linkRepository = linkRepository;
         this.clickEventRepository = clickEventRepository;
         this.ipHashService = ipHashService;
@@ -32,10 +35,13 @@ public class RedirectService {
 
     @Transactional
     public String resolveAndTrack(String code, String referrer, String userAgent, String clientIp) {
-        Link link = linkRepository.findByCode(code)
+        Link link = linkResolutionCache.findByCode(code)
                 .orElseThrow(() -> new ResourceNotFoundException("Link not found"));
 
         LinkRules.ResolutionStatus status = LinkRules.resolveStatus(link, clock);
+        if (status == LinkRules.ResolutionStatus.NOT_FOUND) {
+            throw new ResourceNotFoundException("Link not found");
+        }
         if (status == LinkRules.ResolutionStatus.GONE) {
             throw new LinkGoneException("Link is no longer available");
         }
@@ -50,6 +56,7 @@ public class RedirectService {
                 truncate(userAgent, 1024),
                 ipHashService.hash(clientIp));
         clickEventRepository.save(event);
+        linkResolutionCache.evict(code);
 
         return link.getTargetUrl();
     }
