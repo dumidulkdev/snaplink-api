@@ -2,6 +2,8 @@ package com.snaplink.controller;
 
 import com.snaplink.config.ClientIpResolver;
 import com.snaplink.service.RedirectService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -14,6 +16,7 @@ import java.net.URI;
 import java.util.Set;
 
 @RestController
+@Tag(name = "Redirect", description = "Follow a short link")
 public class RedirectController {
 
     private static final Set<String> RESERVED_ROOT_SEGMENTS = Set.of(
@@ -28,6 +31,7 @@ public class RedirectController {
     }
 
     @GetMapping("/{code}")
+    @Operation(summary = "Redirect to target URL", description = "Records a click and responds with HTTP 302 when the link is active.")
     public ResponseEntity<Void> redirect(
             @PathVariable String code,
             HttpServletRequest request) {
