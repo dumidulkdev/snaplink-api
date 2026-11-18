@@ -4,6 +4,7 @@ import com.snaplink.config.SnapLinkProperties;
 import com.snaplink.dto.CreateLinkRequest;
 import com.snaplink.dto.LinkResponse;
 import com.snaplink.dto.LinkStatsResponse;
+import com.snaplink.dto.UpdateLinkRequest;
 import com.snaplink.entity.Link;
 import com.snaplink.exception.ConflictException;
 import com.snaplink.exception.ResourceNotFoundException;
@@ -33,6 +34,7 @@ public class LinkService {
     private final ShortCodeGenerator codeGenerator;
     private final SnapLinkProperties properties;
     private final LinkMapper linkMapper;
+    private final LinkResolutionCache linkResolutionCache;
     private final Clock clock;
 
     public LinkService(
@@ -42,6 +44,7 @@ public class LinkService {
             ShortCodeGenerator codeGenerator,
             SnapLinkProperties properties,
             LinkMapper linkMapper,
+            LinkResolutionCache linkResolutionCache,
             Clock clock) {
         this.linkRepository = linkRepository;
         this.clickEventRepository = clickEventRepository;
@@ -49,6 +52,7 @@ public class LinkService {
         this.codeGenerator = codeGenerator;
         this.properties = properties;
         this.linkMapper = linkMapper;
+        this.linkResolutionCache = linkResolutionCache;
         this.clock = clock;
     }
 
@@ -113,12 +117,42 @@ public class LinkService {
             perDay.add(new LinkStatsResponse.DailyClickCount(day, count));
         }
 
-        List<LinkStatsResponse.RankedCount> topReferrers = mapRanked(
+        List<LinkStatsResponse.RankedCount> referrers = mapRanked(
                 clickEventRepository.topReferrers(link.getId()), TOP_N);
         List<LinkStatsResponse.RankedCount> topUserAgents = mapRanked(
                 clickEventRepository.topUserAgents(link.getId()), TOP_N);
 
-        return new LinkStatsResponse(total, perDay, topReferrers, topUserAgents);
+        return new LinkStatsResponse(total, perDay, referrers, topUserAgents);
+    }
+
+    @Transactional
+    public LinkResponse updateLink(String code, UpdateLinkRequest request) {
+        Link link = requireLink(code);
+        if (request.expiresAt() != null) {
+            if (!request.expiresAt().isAfter(clock.instant())) {
+                throw new IllegalArgumentException("expiresAt must be in the future");
+            }
+            link.setExpiresAt(request.expiresAt());
+        }
+        if (request.maxClicks() != null) {
+            if (request.maxClicks() < 1) {
+                throw new IllegalArgumentException("maxClicks must be at least 1");
+            }
+            link.setMaxClicks(request.maxClicks());
+        }
+        if (request.active() != null) {
+            link.setActive(request.active());
+        }
+        linkResolutionCache.evict(code);
+        long total = clickEventRepository.countByLinkId(link.getId());
+        return linkMapper.toResponse(link, total);
+    }
+
+    @Transactional
+    public void deleteLink(String code) {
+        Link link = requireLink(code);
+        linkRepository.delete(link);
+        linkResolutionCache.evict(code);
     }
 
     private Link requireLink(String code) {

@@ -3,6 +3,7 @@ package com.snaplink.controller;
 import com.snaplink.dto.CreateLinkRequest;
 import com.snaplink.dto.LinkResponse;
 import com.snaplink.dto.LinkStatsResponse;
+import com.snaplink.dto.UpdateLinkRequest;
 import com.snaplink.service.LinkService;
 import com.snaplink.service.QrCodeService;
 import jakarta.validation.Valid;
@@ -47,5 +48,16 @@ public class LinkController {
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.IMAGE_PNG_VALUE)
                 .body(png);
+    }
+
+    @PatchMapping("/{code}")
+    public LinkResponse update(@PathVariable String code, @RequestBody UpdateLinkRequest request) {
+        return linkService.updateLink(code, request);
+    }
+
+    @DeleteMapping("/{code}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@PathVariable String code) {
+        linkService.deleteLink(code);
     }
 }
