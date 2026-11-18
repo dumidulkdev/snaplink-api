@@ -2,6 +2,7 @@ package com.snaplink.controller;
 
 import com.snaplink.dto.CreateLinkRequest;
 import com.snaplink.dto.LinkResponse;
+import com.snaplink.dto.LinkStatsResponse;
 import com.snaplink.service.LinkService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -26,5 +27,10 @@ public class LinkController {
     @GetMapping("/{code}")
     public LinkResponse get(@PathVariable String code) {
         return linkService.getLink(code);
+    }
+
+    @GetMapping("/{code}/stats")
+    public LinkStatsResponse stats(@PathVariable String code, @RequestParam(defaultValue = "30") int days) {
+        return linkService.getStats(code, days);
     }
 }
