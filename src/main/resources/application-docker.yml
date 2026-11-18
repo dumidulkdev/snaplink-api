@@ -1,0 +1,15 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:postgres}:${DB_PORT:5432}/${DB_NAME:snaplink}
+    username: ${DB_USER:snaplink}
+    password: ${DB_PASSWORD:snaplink}
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  flyway:
+    locations: classpath:db/migration
+
+snaplink:
+  base-url: ${SNAPLINK_BASE_URL:http://localhost:8080}
+  ip-hash-salt: ${SNAPLINK_IP_HASH_SALT:docker-default-salt}

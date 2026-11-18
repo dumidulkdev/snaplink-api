@@ -1,0 +1,60 @@
+spring:
+  profiles:
+    default: local
+  application:
+    name: snaplink-api
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+  cache:
+    type: caffeine
+
+snaplink:
+  base-url: http://localhost:8080
+  url-max-length: 2048
+  code-length: 8
+  code-collision-retries: 5
+  reserved-aliases:
+    - api
+    - swagger
+    - swagger-ui
+    - health
+    - actuator
+    - admin
+    - login
+    - static
+    - favicon.ico
+  rate-limit:
+    create:
+      capacity: 20
+      refill-per-minute: 10
+    redirect:
+      capacity: 100
+      refill-per-minute: 60
+  cache:
+    link-resolution-max-size: 10000
+    link-resolution-ttl-minutes: 30
+  cleanup:
+    cron: "0 0 * * * *"
+    purge-instead-of-deactivate: false
+  qr:
+    default-size: 300
+    min-size: 100
+    max-size: 1000
+  ip-hash-salt: change-me-in-production
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+server:
+  error:
+    include-message: never
