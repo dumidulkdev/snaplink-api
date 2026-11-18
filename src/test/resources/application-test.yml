@@ -1,0 +1,23 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:snaplink_test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+  flyway:
+    locations: classpath:db/migration
+
+snaplink:
+  base-url: http://localhost:8080
+  rate-limit:
+    create:
+      capacity: 1000
+      refill-per-minute: 1000
+    redirect:
+      capacity: 1000
+      refill-per-minute: 1000
+  ip-hash-salt: test-salt
